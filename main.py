@@ -7,8 +7,8 @@ from telegram.ext import Application, ApplicationBuilder, CommandHandler, Messag
 
 import database as db
 from config import TELEGRAM_BOT_TOKEN, BOT_NAME, logger
-from handlers.chat import handle_message
-from handlers.memory_commands import memories_cmd, forget_cmd, remember_cmd
+from chat import handle_message
+from memory_commands import memories_cmd, forget_cmd, remember_cmd
 
 
 async def start_cmd(update: Update, context):
