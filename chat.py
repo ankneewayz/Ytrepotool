@@ -12,7 +12,7 @@ from telegram.ext import ContextTypes
 
 import database as db
 from persona import build_system_prompt
-from utils.ai_client import generate_reply, extract_facts
+from ai_client import generate_reply, extract_facts
 from config import BOT_NAME, logger
 
 NAME_RE = re.compile(rf"\b{re.escape(BOT_NAME)}\b", re.IGNORECASE)
