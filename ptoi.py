@@ -875,8 +875,8 @@ Quick analysis of any Indian phone number:
 🔍 Total Searches: `{stats['total_searches']}`
 📈 Active Today: `{stats['active_today']}`
 
-⚡ Bot Status: `Online`
-🔄 Backend: `{Config.BACKEND_BOT}`"""
+⚡ Bot Status: `Online'
+    `"""
         await query.edit_message_text(text, parse_mode=ParseMode.MARKDOWN, reply_markup=back_button())
 
     elif data == "menu_admin" and is_owner:
