@@ -564,13 +564,29 @@ I'm your personal OSINT lookup assistant with powerful features:
 💳 *Your Credits:* `{credit_text}`
 
 *Select an option below or send a 10-digit number directly!*"""
+try:
+    photo_path = os.path.join(
+        os.path.dirname(os.path.abspath(__file__)),
+        "Bot.png"
+    )
 
-    await update.message.reply_photo(
-    photo=open("Bot.png", "rb"),
-    caption=welcome_text,
-    parse_mode=ParseMode.MARKDOWN,
-    reply_markup=main_menu_keyboard(is_owner)
-)
+    with open(photo_path, "rb") as photo:
+        await update.message.reply_photo(
+            photo=photo,
+            caption=welcome_text,
+            parse_mode=ParseMode.MARKDOWN,
+            reply_markup=main_menu_keyboard(is_owner)
+        )
+
+except Exception as e:
+    logger.warning(f"Could not send Bot.png: {e}")
+
+    await update.message.reply_text(
+        welcome_text,
+        parse_mode=ParseMode.MARKDOWN,
+        reply_markup=main_menu_keyboard(is_owner)
+    )
+    
 
 async def help_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Handle /help command"""
