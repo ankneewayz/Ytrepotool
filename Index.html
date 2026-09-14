@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🔍 OSINT Pro — Web Lookup</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+<div class="container">
+  <header>
+    <h1>🔍 OSINT PRO</h1>
+    <p class="sub">Phone OSINT | Vehicle RC | Basic Info</p>
+    <div class="credits">💳 Credits: <span id="credits">{{ credits }} / {{ free }}</span></div>
+  </header>
+
+  <div class="mode-tabs">
+    <button class="tab active" data-mode="auto">🤖 Auto Detect</button>
+    <button class="tab" data-mode="phone">📱 Phone OSINT</button>
+    <button class="tab" data-mode="vehicle">🚗 Vehicle RC</button>
+    <button class="tab" data-mode="basic">📊 Basic Info</button>
+  </div>
+
+  <div class="search-box">
+    <input id="query" type="text" placeholder="e.g. 6205923286 or MH12AB1234" autofocus>
+    <button id="go" onclick="doLookup()">Search</button>
+  </div>
+
+  <div id="status" class="status hidden"></div>
+  <div id="output" class="output hidden"></div>
+
+  <footer>⚡ Backend engine online · Each phone/vehicle lookup costs 1 credit · Basic info is FREE</footer>
+</div>
+
+<script>
+let mode = "auto";
+document.querySelectorAll(".tab").forEach(t => t.onclick = () => {
+  document.querySelectorAll(".tab").forEach(x => x.classList.remove("active"));
+  t.classList.add("active");
+  mode = t.dataset.mode;
+});
+
+const spinnerFrames = ["⠋","⠙","⠹","⠸","⠼","⠴","⠦","⠧","⠇","⠏"];
+let spinTimer = null;
+
+async function doLookup() {
+  const q = document.getElementById("query").value.trim();
+  if (!q) return;
+  const statusEl = document.getElementById("status");
+  const outEl = document.getElementById("output");
+  outEl.classList.add("hidden"); outEl.innerHTML = "";
+  statusEl.classList.remove("hidden");
+
+  let i = 0;
+  statusEl.textContent = "";
+  spinTimer = setInterval(() => {
+    statusEl.textContent = `${spinnerFrames[i++ % 10]} Connecting to OSINT engine... scanning ${q.slice(0,4)}XXXX${q.slice(-2)}`;
+  }, 100);
+
+  try {
+    const res = await fetch("/api/lookup", {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({query: q, mode})
+    });
+    const data = await res.json();
+    clearInterval(spinTimer);
+    statusEl.classList.add("hidden");
+
+    if (data.error) {
+      outEl.classList.remove("hidden");
+      outEl.innerHTML = `<div class="err">❌ ${data.error}</div>`;
+    } else {
+      render(data);
+      if (data.credits_left !== undefined)
+        document.getElementById("credits").textContent = data.credits_left;
+    }
+  } catch (e) {
+    clearInterval(spinTimer);
+    statusEl.classList.add("hidden");
+    outEl.classList.remove("hidden");
+    outEl.innerHTML = `<div class="err">❌ Request failed: ${e}</div>`;
+  }
+}
+
+function render(data) {
+  const outEl = document.getElementById("output");
+  outEl.classList.remove("hidden");
+  let html = "";
+  if (data.type === "phone" && data.result.text) {
+    html = `<h3>📱 Phone OSINT Report</h3><pre>${escapeHtml(data.result.text)}</pre>`;
+  } else if (data.type === "vehicle" && data.result) {
+    const r = data.result;
+    if (r.error) { html = `<div class="err">❌ ${r.error}</div>`; }
+    else {
+      html = `<h3>🚗 Vehicle RC Details</h3><table>`;
+      for (const [k, v] of Object.entries(r)) {
+        if (k === "Website") html += `<tr><td>🌐 ${k}</td><td><a href="${v}" target="_blank">${v}</a></td></tr>`;
+        else html += `<tr><td>${k}</td><td>${escapeHtml(String(v))}</td></tr>`;
+      }
+      html += `</table>`;
+    }
+  } else if (data.type === "basic") {
+    const r = data.result;
+    if (r.error) html = `<div class="err">❌ ${r.error}</div>`;
+    else html = `<h3>📊 Basic Phone Analysis</h3><table>
+      <tr><td>📞 Number</td><td>${r.number}</td></tr>
+      <tr><td>🏢 Carrier</td><td>${r.carrier}</td></tr>
+      <tr><td>🗺️ Circle</td><td>${r.circle}</td></tr>
+      <tr><td>📡 Type</td><td>${r.type}</td></tr>
+      <tr><td>🔢 Series Code</td><td>${r.series_code}</td></tr>
+      <tr><td>📶 MSC Code</td><td>${r.msc_code}</td></tr>
+      <tr><td>👤 Subscriber</td><td>${r.subscriber}</td></tr></table>
+      <p class="hint">💡 Use Phone OSINT mode for deep lookup (1 credit).</p>`;
+  }
+  outEl.innerHTML = html;
+}
+
+function escapeHtml(s){const d=document.createElement("div");d.textContent=s;return d.innerHTML;}
+document.getElementById("query").addEventListener("keydown", e => {
+  if (e.key === "Enter") doLookup();
+});
+</script>
+</body>
+</html>
